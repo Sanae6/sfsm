@@ -98,12 +98,24 @@ pub trait IsState<State> {
     fn is_state(&self) -> bool;
 }
 
+/// An error type that will be returned by the state machine if something goes wrong.
+/// Specifically, when the state machine gets stuck in a state due to an internal error.
+/// The state machine is designed in a way where this should not happen, so this can largely be
+/// ignored. It is used in situations that are other wise hard to avoid without a panic!.
+/// It might be extended in the future to contains custom error codes generated from the states
+/// themselves
+#[derive(Debug)]
+pub enum StepError {
+    Internal,
+}
+
 // Test the concept
 #[cfg(test)]
 mod tests {
-    use crate::{State, Transition, IsState, TransitGuard};
+    use crate::{State, Transition, IsState, TransitGuard, StepError};
     use std::rc::Rc;
     use std::cell::RefCell;
+    use core::result::Result;
 
     // Definitions of data structs and transitions required
     #[derive(Debug, PartialEq)]
@@ -226,12 +238,12 @@ mod tests {
             }
         }
 
-        pub fn step(&mut self) {
+        pub fn step(&mut self) -> Result<(), StepError> {
             let ref mut e = self.states;
             *e = match *e {
                 SfsmStates::InitStateEntry(ref mut state_option) => {
 
-                    let mut state = state_option.take().unwrap();
+                    let mut state = state_option.take().ok_or(StepError::Internal)?;
 
                     if self.do_entry {
                         State::entry(&mut state);
@@ -256,8 +268,7 @@ mod tests {
                     }
                 }
                 SfsmStates::ProcessStateEntry(ref mut state_option) => {
-
-                    let mut state = state_option.take().unwrap();
+                    let mut state = state_option.take().ok_or(StepError::Internal)?;
 
                     if self.do_entry {
                         State::entry(&mut state);
@@ -295,7 +306,8 @@ mod tests {
                         SfsmStates::ProcessStateEntry(Some(state))
                     }
                 }
-            }
+            };
+            Ok(())
         }
 
         pub fn peek_state(&self) -> &SfsmStates {
@@ -343,11 +355,11 @@ mod tests {
         let is_in_init = IsState::<InitData>::is_state(&sfms);
         assert!(is_in_init);
 
-        sfms.step();
+        sfms.step().unwrap();
 
         assert_eq!(*monitor.borrow(), StateMonitor::Init);
 
-        sfms.step();
+        sfms.step().unwrap();
         let is_in_process = IsState::<ProcessData>::is_state(&sfms);
         assert!(is_in_process);
         let is_in_process = IsState::<InitData>::is_state(&sfms);
@@ -364,10 +376,10 @@ mod tests {
             }
         }
 
-        sfms.step();
+        sfms.step().unwrap();
         assert_eq!(*monitor.borrow(), StateMonitor::Process);
 
-        sfms.step();
+        sfms.step().unwrap();
         assert_eq!(*monitor.borrow(), StateMonitor::Init);
 
         let exit = sfms.stop();

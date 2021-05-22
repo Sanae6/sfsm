@@ -39,6 +39,7 @@ impl ToTokens for StateMachineToTokens<'_> {
         let token_steam = proc_macro2::TokenStream::from(quote! {
 
             use sfsm::IsState;
+            use sfsm::StepError;
 
             enum #enum_name {
                 #(#state_entries)*
@@ -59,12 +60,13 @@ impl ToTokens for StateMachineToTokens<'_> {
                     }
                 }
 
-                pub fn step(&mut self) {
+                pub fn step(&mut self) -> Result<(), StepError> {
                     use #enum_name::*;
                     let ref mut e = self.states;
                     *e = match *e {
                         #( #states, )*
-                    }
+                    };
+                    Ok(())
                 }
 
                 pub fn peek_state(&self) -> &#enum_name {
@@ -107,7 +109,7 @@ impl ToTokens for StopToTokens<'_> {
         let exit_transitions = ExitTransitionToTokens::new(&self.state.transits);
         let token_steam = proc_macro2::TokenStream::from(quote! {
             #enum_name::#state_entry(ref mut state_option) => {
-                let mut state = state_option.take().unwrap();
+                let mut state = state_option.take().ok_or(StepError::Internal)?;
                 State::exit(&mut state);
                 #exit_transitions
                 #enum_name::#state_entry(Some(state))
