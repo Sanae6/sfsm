@@ -105,14 +105,14 @@ pub trait IsState<State> {
 /// It might be extended in the future to contains custom error codes generated from the states
 /// themselves
 #[derive(Debug)]
-pub enum StepError {
+pub enum SfsmError {
     Internal,
 }
 
 // Test the concept
 #[cfg(test)]
 mod tests {
-    use crate::{State, Transition, IsState, TransitGuard, StepError};
+    use crate::{State, Transition, IsState, TransitGuard, SfsmError};
     use std::rc::Rc;
     use std::cell::RefCell;
     use core::result::Result;
@@ -238,12 +238,12 @@ mod tests {
             }
         }
 
-        pub fn step(&mut self) -> Result<(), StepError> {
+        pub fn step(&mut self) -> Result<(), SfsmError> {
             let ref mut e = self.states;
             *e = match *e {
                 SfsmStates::InitStateEntry(ref mut state_option) => {
 
-                    let mut state = state_option.take().ok_or(StepError::Internal)?;
+                    let mut state = state_option.take().ok_or(SfsmError::Internal)?;
 
                     if self.do_entry {
                         State::entry(&mut state);
@@ -268,7 +268,7 @@ mod tests {
                     }
                 }
                 SfsmStates::ProcessStateEntry(ref mut state_option) => {
-                    let mut state = state_option.take().ok_or(StepError::Internal)?;
+                    let mut state = state_option.take().ok_or(SfsmError::Internal)?;
 
                     if self.do_entry {
                         State::entry(&mut state);
@@ -314,21 +314,21 @@ mod tests {
             return &self.states;
         }
 
-        pub fn stop(mut self) -> SfsmStates {
+        pub fn stop(mut self) -> Result<SfsmStates, SfsmError> {
             match self.states {
                 SfsmStates::InitStateEntry(ref mut state_option) => {
-                    let mut state = state_option.take().unwrap();
+                    let mut state = state_option.take().ok_or(SfsmError::Internal)?;
                     State::exit(&mut state);
                     Transition::<ProcessData>::exit(&mut state);
 
-                    SfsmStates::InitStateEntry(Some(state))
+                    Ok(SfsmStates::InitStateEntry(Some(state)))
                 }
                 SfsmStates::ProcessStateEntry(ref mut state_option) => {
-                    let mut state = state_option.take().unwrap();
+                    let mut state = state_option.take().ok_or(SfsmError::Internal)?;
                     State::exit(&mut state);
                     Transition::<InitData>::exit(&mut state);
                     Transition::<ProcessData>::exit(&mut state);
-                    SfsmStates::ProcessStateEntry(Some(state))
+                    Ok(SfsmStates::ProcessStateEntry(Some(state)))
                 }
             }
         }

@@ -48,12 +48,12 @@ use crate::types::{MatchStateEntry};
 ///             do_entry: true,
 ///         }
 ///     }
-///     pub fn step(&mut self) {
+///     pub fn step(&mut self) -> Result<(), SfsmError>  {
 ///         use ElevatorStates::*;
 ///         let ref mut e = self.states;
 ///         *e = match *e {
 ///             ElevatorStates::MoveUpState(ref mut state_option) => {
-///                 let mut state = state_option.take().unwrap();
+///                 let mut state = state_option.take().ok_or(SfsmError::Internal)?;
 ///                 if self.do_entry {
 ///                     State::entry(&mut state);
 ///                     Transition::<Move<Down>>::entry(&mut state);
