@@ -73,7 +73,7 @@ impl ToTokens for StateMachineToTokens<'_> {
                    return &self.states;
                 }
 
-                pub fn stop(mut self) -> #enum_name {
+                pub fn stop(mut self) -> Result<#enum_name, SfsmError> {
                     match self.states {
                         # ( #exits )*,
                     }
@@ -112,7 +112,7 @@ impl ToTokens for StopToTokens<'_> {
                 let mut state = state_option.take().ok_or(SfsmError::Internal)?;
                 State::exit(&mut state);
                 #exit_transitions
-                #enum_name::#state_entry(Some(state))
+                Ok(#enum_name::#state_entry(Some(state)))
             }
         });
 

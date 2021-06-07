@@ -83,22 +83,23 @@ use crate::types::{MatchStateEntry};
 ///                 }
 ///             }
 ///         }
+///         Ok(())
 ///     }
 ///     pub fn peek_state(&self) -> &ElevatorStates {
 ///         return &self.states;
 ///     }
-///     pub fn stop(mut self) -> ElevatorStates {
+///     pub fn stop(mut self) -> Result<ElevatorStates, SfsmError> {
 ///         match self.states {
 ///             ElevatorStates::MoveUpState(ref mut state_option) => {
-///                 let mut state = state_option.take().unwrap();
+///                 let mut state = state_option.take().ok_or(SfsmError::Internal)?;
 ///                 State::exit(&mut state);
 ///                 Transition::<Move<Down>>::exit(&mut state);
-///                 ElevatorStates::MoveUpState(Some(state))
+///                 Ok(ElevatorStates::MoveUpState(Some(state)))
 ///             }
 ///             ElevatorStates::MoveDownState(ref mut state_option) => {
-///                 let mut state = state_option.take().unwrap();
+///                 let mut state = state_option.take().ok_or(SfsmError::Internal)?;
 ///                 State::exit(&mut state);
-///                 ElevatorStates::MoveDownState(Some(state))
+///                 Ok(ElevatorStates::MoveDownState(Some(state)))
 ///             }
 ///         }
 ///     }

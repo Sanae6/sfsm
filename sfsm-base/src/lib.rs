@@ -125,13 +125,12 @@ mod tests {
         Process,
     }
     struct GlobalData { pub val: u32, pub monitor: Rc<RefCell<StateMonitor>> }
-    struct InitData { pub val: u32, pub global: GlobalData }
+    struct InitData { pub global: GlobalData }
     struct ProcessData { pub global: GlobalData  }
 
     // Init state definitions
     impl State for InitData {
         fn entry(&mut self) {
-            self.val = 1;
             self.global.val = 0;
             let mut monitor = self.global.monitor.borrow_mut();
             *monitor = StateMonitor::Init;
@@ -169,7 +168,6 @@ mod tests {
     impl Into<InitData> for ProcessData {
         fn into(self) -> InitData {
             InitData {
-                val: 0,
                 global: self.global
             }
         }
@@ -346,7 +344,6 @@ mod tests {
         };
 
         let init = InitData {
-            val: 0,
             global
         };
 
@@ -382,7 +379,7 @@ mod tests {
         sfms.step().unwrap();
         assert_eq!(*monitor.borrow(), StateMonitor::Init);
 
-        let exit = sfms.stop();
+        let exit = sfms.stop().unwrap();
 
         match exit {
             SfsmStates::ProcessStateEntry(_) => {
