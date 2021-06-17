@@ -46,7 +46,8 @@
 //!
 //! // To start out, first define the state machine.
 //! add_state_machine!(
-//!    Hiker,  // Name of the state machine. Used to run it later
+//!    #[derive(Debug)]
+//!    pub Hiker,  // Name of the state machine. Used to run it later
 //!    Hike<Up>,   // The initial state the state machine will start with
 //!    [
 //!         // Define all states. These states must correspond to a struct
@@ -62,10 +63,10 @@
 //! );
 //!
 //! // Add the structs that correspond to the defined states.
-//! struct Up {};
-//! struct Down {};
+//! pub struct Up {};
+//! pub struct Down {};
 //!
-//! struct Hike<Dir> {
+//! pub struct Hike<Dir> {
 //!     marker: PhantomData<Dir>,
 //!     is_down: bool,
 //! }
