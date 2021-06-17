@@ -109,22 +109,29 @@ pub enum SfsmError {
     Internal,
 }
 
+trait PushMessage<Message> {
+    fn push_message(&mut self, message: Message);
+}
+
+trait PollMessage<Message> {
+    fn poll_message(&mut self) -> Option<Message>;
+}
+
+trait ForwardPushMessage<State, Message> {
+    fn push_message(&mut self, message: Message) -> Result<(), Message>;
+}
+
+trait ForwardPullMessage<State, Message> {
+    fn poll_message(&mut self) -> Option<Message>;
+}
+
 // Test the concept
 #[cfg(test)]
 mod tests {
     use crate::{State, Transition, IsState, TransitGuard, SfsmError};
-    use std::rc::Rc;
-    use std::cell::RefCell;
     use core::result::Result;
 
-    // Definitions of data structs and transitions required
-    #[derive(Debug, PartialEq)]
-    enum StateMonitor {
-        PreInit,
-        Init,
-        Process,
-    }
-    struct GlobalData { pub val: u32, pub monitor: Rc<RefCell<StateMonitor>> }
+    struct GlobalData { pub val: u32 }
     struct InitData { pub global: GlobalData }
     struct ProcessData { pub global: GlobalData  }
 
@@ -132,8 +139,6 @@ mod tests {
     impl State for InitData {
         fn entry(&mut self) {
             self.global.val = 0;
-            let mut monitor = self.global.monitor.borrow_mut();
-            *monitor = StateMonitor::Init;
         }
     }
 
@@ -152,12 +157,9 @@ mod tests {
         }
     }
 
-
     // Process state definitions
     impl State for ProcessData {
         fn entry(&mut self) {
-            let mut monitor = self.global.monitor.borrow_mut();
-            *monitor = StateMonitor::Process;
         }
 
         fn execute(&mut self) {
@@ -333,14 +335,12 @@ mod tests {
     }
 
 
+    /// Note, the following code is to verify if the concepts that will be applied by the macros work
     #[test]
     fn concept() {
 
-        let monitor = Rc::new(RefCell::new(StateMonitor::PreInit));
-
         let global = GlobalData {
             val: 0,
-            monitor: monitor.clone(),
         };
 
         let init = InitData {
@@ -349,12 +349,9 @@ mod tests {
 
         let mut sfms = StaticFiniteStateMachine::new(init);
 
-        let is_in_init = IsState::<InitData>::is_state(&sfms);
-        assert!(is_in_init);
+        assert!(IsState::<InitData>::is_state(&sfms));
 
         sfms.step().unwrap();
-
-        assert_eq!(*monitor.borrow(), StateMonitor::Init);
 
         sfms.step().unwrap();
         let is_in_process = IsState::<ProcessData>::is_state(&sfms);
@@ -374,10 +371,10 @@ mod tests {
         }
 
         sfms.step().unwrap();
-        assert_eq!(*monitor.borrow(), StateMonitor::Process);
+        assert!(IsState::<InitData>::is_state(&sfms));
 
         sfms.step().unwrap();
-        assert_eq!(*monitor.borrow(), StateMonitor::Init);
+        assert!(IsState::<ProcessData>::is_state(&sfms));
 
         let exit = sfms.stop().unwrap();
 
