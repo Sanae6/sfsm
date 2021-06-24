@@ -109,6 +109,11 @@ pub enum SfsmError {
     Internal,
 }
 
+#[derive(Debug)]
+pub enum MessageError<T> {
+    StateIsNotActive(T),
+}
+
 trait PushMessage<Message> {
     fn push_message(&mut self, message: Message);
 }
@@ -118,21 +123,21 @@ trait PollMessage<Message> {
 }
 
 trait ForwardPushMessage<State, Message> {
-    fn push_message(&mut self, message: Message) -> Result<(), Message>;
+    fn push_message(&mut self, message: Message) -> Result<(), MessageError<Message>>;
 }
 
-trait ForwardPullMessage<State, Message> {
-    fn poll_message(&mut self) -> Option<Message>;
+trait ForwardPollMessage<State, Message> {
+    fn poll_message(&mut self) -> Result<Option<Message>, Message<()>>;
 }
 
 // Test the concept
 #[cfg(test)]
 mod tests {
-    use crate::{State, Transition, IsState, TransitGuard, SfsmError};
+    use crate::{State, Transition, IsState, TransitGuard, SfsmError, ForwardPullMessage, PushMessage, MessageError, ForwardPushMessage};
     use core::result::Result;
 
     struct GlobalData { pub val: u32 }
-    struct InitData { pub global: GlobalData }
+    struct InitData { pub global: GlobalData, exit_transit: bool }
     struct ProcessData { pub global: GlobalData  }
 
     // Init state definitions
@@ -332,8 +337,27 @@ mod tests {
                 }
             }
         }
+
+
     }
 
+    struct M1 {
+        transit: bool,
+    }
+
+    impl PushMessage<M1> for InitData {
+        fn push_message(&mut self, message: M1) {
+            self.exit_transit = message.transit;
+        }
+    }
+
+    impl ForwardPushMessage<InitData, M1> for StaticFiniteStateMachine {
+        fn push_message(&mut self, message: M1) -> Result<(), MessageError<M1>> {
+
+
+
+        }
+    }
 
     /// Note, the following code is to verify if the concepts that will be applied by the macros work
     #[test]
