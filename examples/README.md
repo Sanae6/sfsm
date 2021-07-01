@@ -9,7 +9,7 @@ The following folder contains a few examples to explain how to use the state mac
 # Run
 Run the example with;
 ```bash
-cargo expand --example simple
+cargo expand --example basic
 ```
 or run all the example tests with:
 ```bash
