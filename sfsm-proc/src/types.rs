@@ -38,15 +38,6 @@ pub struct MatchStateEntry {
     pub var_name: Ident,
 }
 
-
-// Types for the messaging system
-// Indicates which direction the macro is allowed to parse.
-pub enum MessageParseDir {
-    Push,
-    Pull,
-    Bidirectional,
-}
-
 // The actual message containing the struct name and optional generics arguments
 pub struct Message {
     pub generics: Option<AngleBracketedGenericArguments>,

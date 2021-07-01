@@ -7,7 +7,6 @@ use syn::Token;
 use convert_case::{Case, Casing};
 use crate::types::{State, Transition, Machine, StateEntry, MatchStateEntry, StateMessage, Messages, Message, MessageDir};
 use quote::ToTokens;
-use syn::spanned::Spanned;
 
 impl State {
     fn state_to_enum(name: &Ident, types: &Option<AngleBracketedGenericArguments>) -> Ident {

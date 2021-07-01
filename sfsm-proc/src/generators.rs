@@ -398,8 +398,6 @@ impl<'a> MessagesToTokens<'a> {
 
 impl ToTokens for MessagesToTokens<'_> {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-        let sfsm_name = &self.messages.name;
-        let enum_name = &self.messages.enum_name;
         let messages = &self.messages.messages;
 
         let messages_to_tokens: Vec<StateMessageToTokens> = messages.into_iter().map(|message| {

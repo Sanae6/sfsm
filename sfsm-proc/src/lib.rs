@@ -16,111 +16,34 @@ use crate::types::{MatchStateEntry, Messages};
 ///     StateMachineName,
 ///     InitialState,
 ///     [State1, State2, StateN, ...],
-///     [StateN -> StateN, ...]
+///     [StateN => StateN, ...]
 /// );
 ///```
-/// So the following example:
+/// - StateMachineName: Defines the name of the state machine.
+/// - InitialState: The initial state the state machine will start with.
+/// - [State1, State2, StateN, ...]: Specifies all state structs that will be known to the state machine. Each state must implement the State trait.
+/// - [StateN => StateN, ...]: Defines all transitions between states that can occur. For each transition, the state must implement the according Transition trait.
+///
+/// An example might look like this.
 /// ```ignore
+/// struct Up {}
+/// struct Down {}
+/// struct Move<T> {}
+/// impl State for Move<Up> { ... }
+/// impl State for Move<Down> { ... }
+/// impl Transition<Move<Up>> for Move<Down> { ... }
+/// impl Transition<Move<Down>> for Move<Up> { ... }
 /// add_state_machine!(
 ///         #[derive(Debug)]
-///         pub Elevator,
+///         pub Rocket,
 ///         Move<Up>,
 ///         [Move<Up>, Move<Down>],
 ///         [
-///             Move<Up> -> Move<Down>
+///             Move<Up> => Move<Down>
+///             Move<Down> => Move<Up>
 ///         ]
 /// );
 ///```
-/// will expand to this state machine.
-///
-///```ignore
-/// #[derive(Debug)]
-/// pub enum ElevatorStates {
-///     MoveUpState(Option<Move<Up>>),
-///     MoveDownState(Option<Move<Down>>),
-/// }
-/// #[derive(Debug)]
-/// pub struct Elevator {
-///     states: ElevatorStates,
-///     do_entry: bool,
-/// }
-/// impl Elevator {
-///     pub fn new(data: Move<Up>) -> Self {
-///         Self {
-///             states: ElevatorStates::MoveUpState(Some(data)),
-///             do_entry: true,
-///         }
-///     }
-///     pub fn step(&mut self) -> Result<(), SfsmError>  {
-///         use ElevatorStates::*;
-///         let ref mut e = self.states;
-///         *e = match *e {
-///             ElevatorStates::MoveUpState(ref mut state_option) => {
-///                 let mut state = state_option.take().ok_or(SfsmError::Internal)?;
-///                 if self.do_entry {
-///                     State::entry(&mut state);
-///                     Transition::<Move<Down>>::entry(&mut state);
-///                     self.do_entry = false;
-///                 }
-///                 State::execute(&mut state);
-///                 Transition::<Move<Down>>::execute(&mut state);
-///                 if Transition::<Move<Down>>::guard(&state) {
-///                     State::exit(&mut state);
-///                     Transition::<Move<Down>>::exit(&mut state);
-///                     let mut next_state: Move<Down> = state.into();
-///                     self.do_entry = true;
-///                     ElevatorStates::MoveDownState(Some(next_state))
-///                 } else {
-///                     ElevatorStates::MoveUpState(Some(state))
-///                 }
-///             }
-///             ElevatorStates::MoveDownState(ref mut state_option) => {
-///                 let mut state = state_option.take().unwrap();
-///                 if self.do_entry {
-///                     State::entry(&mut state);
-///                     self.do_entry = false;
-///                 }
-///                 State::execute(&mut state);
-///                 {
-///                     ElevatorStates::MoveDownState(Some(state))
-///                 }
-///             }
-///         }
-///         Ok(())
-///     }
-///     pub fn peek_state(&self) -> &ElevatorStates {
-///         return &self.states;
-///     }
-///     pub fn stop(mut self) -> Result<ElevatorStates, SfsmError> {
-///         match self.states {
-///             ElevatorStates::MoveUpState(ref mut state_option) => {
-///                 let mut state = state_option.take().ok_or(SfsmError::Internal)?;
-///                 State::exit(&mut state);
-///                 Transition::<Move<Down>>::exit(&mut state);
-///                 Ok(ElevatorStates::MoveUpState(Some(state)))
-///             }
-///             ElevatorStates::MoveDownState(ref mut state_option) => {
-///                 let mut state = state_option.take().ok_or(SfsmError::Internal)?;
-///                 State::exit(&mut state);
-///                 Ok(ElevatorStates::MoveDownState(Some(state)))
-///             }
-///         }
-///     }
-/// }
-///
-/// // One for each state
-/// impl IsState<Move<Down>> for Elevator {
-///     fn is_state(&self) -> bool {
-///         return match self.states {
-///             ElevatorStates::MoveDownState(_) => {
-///                 true
-///             }
-///             _ => false
-///         }
-///     }
-/// }
-///```
-///
 #[proc_macro]
 pub fn add_state_machine(input: TokenStream) -> TokenStream {
 
@@ -132,6 +55,39 @@ pub fn add_state_machine(input: TokenStream) -> TokenStream {
     })
 }
 
+/// Generates code to push messages into states or poll messages from states.
+///
+/// The messaging definition is expected too hold to the following pattern:
+/// ```ignore
+/// add_messages!(
+///     StateMachineName,
+///     [
+///         Message1 <- State1,
+///         Message2 <- State1,
+///         Message1 -> State2,
+///         ...
+///     ]
+/// );
+/// ```
+/// - StateMachineName: This must match a previously with add_state_machine defined state machine.
+/// - [ Message1 <- State1, ... ] Defines all messages that can be passed back an forth. The message specifies the struct/enum that will be used as a message, the <- arrow defines a poll and the -> a push and the state is the target or source state.
+/// For each message, the source/target state must implement the according ReceiveMessage or ReturnMessage trait.
+/// An example might look like this.
+/// ```ignore
+/// struct Liftoff {}
+/// struct Land {}
+/// struct Command<T> {}
+/// struct Status { height: float32, speed: float32}
+/// add_messages!(
+///         Rocket,
+///         [
+///             Command<Liftoff> -> Move<Down>,
+///             Command<Land> -> Move<Up>,
+///             Status <- Move<Up>
+///             Status <- Move<Down>
+///         ]
+/// );
+///```
 #[proc_macro]
 pub fn add_messages(input: TokenStream) -> TokenStream {
 
