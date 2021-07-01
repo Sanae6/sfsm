@@ -42,6 +42,7 @@ impl ToTokens for StateMachineToTokens<'_> {
 
             use sfsm::IsState;
             use sfsm::SfsmError;
+            use sfsm::__private;
 
             #(#attribute)*
             #vis enum #enum_name {
@@ -53,6 +54,8 @@ impl ToTokens for StateMachineToTokens<'_> {
                 states: #enum_name,
                 do_entry: bool,
             }
+
+            impl __private::Machine for #sfsm_name {}
 
             impl #sfsm_name {
                 pub fn new(data: #init_state) -> Self {
