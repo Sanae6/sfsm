@@ -15,8 +15,8 @@ pub struct Move<T> {
 add_state_machine!(
     #[derive(Debug)]                            // Attributes for the generated struct can be defined
     pub Rocket,                                 // Name of the state machine. Accepts a visibility modifier.
-    Move<Grounded>,                           // The state machine will start at the count down
-    [Move<Grounded>, Move<Up>, Move<Down>],   // All possible states
+    Move<Grounded>,                             // The state machine will start at the count down
+    [Move<Grounded>, Move<Up>, Move<Down>],     // All possible states
     [
         Move<Grounded> => Move<Up>,
         Move<Up> => Move<Down>
@@ -47,7 +47,6 @@ impl Transition<Move<Down>> for Move<Up> {
 
 impl State for Move<Down> {
 }
-
 
 fn run_basic_extended_example() -> Result<(), SfsmError> {
 

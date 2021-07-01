@@ -9,15 +9,15 @@ pub struct Grounded {}
 
 // Then define the whole state machine
 add_state_machine!(
-    Rocket,                                     // Name of the state machine. Accepts a visibility modifier.
-    Grounded,                                 // The initial state the state machine will start in
-    [Grounded, MoveUp],                       // All possible states
+    Rocket,                      // Name of the state machine. Accepts a visibility modifier.
+    Grounded,                    // The initial state the state machine will start in
+    [Grounded, MoveUp],          // All possible states
     [
-        Grounded => MoveUp,                   // All transitions
+        Grounded => MoveUp,      // All transitions
     ]
 );
 
-// Now the functionality for the states has to be defined
+// Now the functionality for the states has to be implemented
 // Every state can define an entry, execute and exit function.
 // The execute function will be called multiple times, while the entry function will only be called
 // initially and the exit when the state is left.
