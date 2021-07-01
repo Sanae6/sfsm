@@ -124,7 +124,8 @@ pub enum SfsmError {
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum MessageError<T> {
-    StateIsNotActive(T), /// Will be returned if the state is not active. If it originated during a push, the rejected messaged will be returned with the error.
+    /// Will be returned if the state is not active. If it originated during a push, the rejected messaged will be returned with the error.
+    StateIsNotActive(T),
 }
 
 /// Allows a state to declare that it can receive a message.
