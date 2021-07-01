@@ -36,6 +36,7 @@ impl State for CountDownToLiftoff {
 
 // Implement the transitions for CountDownToLiftoff
 // Begin with the transition to Abort
+// Every transition can define an entry, execute and exit function. The guard function must be defined.
 impl Into<Abort> for CountDownToLiftoff {
     fn into(self) -> Abort {Abort {tries: self.tries}}
 }

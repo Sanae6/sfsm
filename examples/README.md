@@ -1,8 +1,9 @@
 # Examples
 The following folder contains a few examples to explain how to use the state machine generator. 
 
-- Simple: An clean example without any generics or messages.
-- Extended: An example that doesn't do much but shows how generics and attributes can be used.
+- Basic: An clean example without any generics or messages showing the very basic usage.
+- Basic Extended: Same as the basic example, but shows how generics and attributes can be used.
+- Rocket Liftoff: An bit more elaborate example of how an actual state machine could look like.
 - Messages: An example that shows how messages can be passed to states or be polled from states.
 
 # Run
