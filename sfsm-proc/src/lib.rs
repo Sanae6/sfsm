@@ -5,8 +5,8 @@ mod types;
 use quote::{quote};
 use proc_macro::{TokenStream};
 use types::Machine;
-use crate::generators::StateMachineToTokens;
-use crate::types::{MatchStateEntry};
+use crate::generators::{StateMachineToTokens, MessagesToTokens};
+use crate::types::{MatchStateEntry, Messages};
 
 /// Generates a state machine from a given state machine definition.
 ///
@@ -129,6 +129,17 @@ pub fn add_state_machine(input: TokenStream) -> TokenStream {
 
     TokenStream::from(quote!{
         #sfsm_to_tokens
+    })
+}
+
+#[proc_macro]
+pub fn add_messages(input: TokenStream) -> TokenStream {
+
+    let definition = syn::parse_macro_input!(input as Messages);
+    let messages_to_tokens = MessagesToTokens::new(&definition);
+
+    TokenStream::from(quote!{
+        #messages_to_tokens
     })
 }
 
